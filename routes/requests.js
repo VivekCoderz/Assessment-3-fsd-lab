@@ -24,7 +24,8 @@ async function findRequest(id, res) {
 }
 
 function isOwner(request, user) {
-  return request.createdBy._id.toString() === user._id.toString();
+  // createdBy is null after populate if the owner account was deleted
+  return !!request.createdBy && request.createdBy._id.toString() === user._id.toString();
 }
 
 // POST /api/requests  -> student creates a request
