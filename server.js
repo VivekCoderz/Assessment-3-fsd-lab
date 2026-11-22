@@ -8,6 +8,11 @@ const adminRoutes = require("./routes/admin");
 
 const app = express();
 app.use(express.json()); // read JSON body
+// Express 5 leaves req.body undefined when no JSON body is sent; default it to {}
+app.use((req, res, next) => {
+  if (req.body === undefined) req.body = {};
+  next();
+});
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -21,6 +26,10 @@ app.use((req, res) => res.status(404).json({ message: "Route not found" }));
 
 // Common error handler
 app.use((err, req, res, next) => {
+  // Malformed JSON body -> 400 instead of 500
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).json({ message: "Invalid JSON body" });
+  }
   console.error(err);
   res.status(500).json({ message: "Server error", error: err.message });
 });
@@ -33,4 +42,7 @@ mongoose
       console.log(`Server running on port ${process.env.PORT || 5000}`)
     );
   })
-  .catch((err) => console.error("MongoDB connection failed:", err.message));
+  .catch((err) => {
+    console.error("MongoDB connection failed:", err.message);
+    process.exit(1);
+  });
